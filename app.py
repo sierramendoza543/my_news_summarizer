@@ -5,9 +5,8 @@ from datetime import datetime
 # Google News API Key (Replace with your actual key)
 api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"
 
-# List of available news sources (excluding removed.com)
-news_sources = [
-    source for source in [
+# List of available U.S. news sources
+us_sources = [
     'abc-news', 
     'axios', 
     'bbc-news', 
@@ -47,7 +46,6 @@ news_sources = [
     'usa-today', 
     'vice-news', 
     'wired'
-] if source != 'removed.com'
 ]
 
 def get_news_articles(query, sources, sort_by=None):
@@ -55,9 +53,11 @@ def get_news_articles(query, sources, sort_by=None):
     base_url = "https://newsapi.org/v2/everything"
     params = {
         "q": query,
-        "sources": ",".join(sources),
         "apiKey": api_key
     }
+
+    if sources and sources != ['All']:
+        params["sources"] = ",".join(sources)
 
     if sort_by:
         params["sortBy"] = sort_by
@@ -83,19 +83,23 @@ def main():
     # User input for search query
     query = st.text_input("Enter your research topic:")
 
-    # Source selection
-    selected_sources = st.multiselect("Select news sources:", news_sources)
+    # Source selection (including "All")
+    source_options = ['All'] + us_sources
+    selected_sources = st.selectbox("Select news sources:", source_options)
 
-    # Sort by option
-    sort_by_options = ["publishedAt", "popularity", "None"]
-    sort_by = st.selectbox("Sort by:", sort_by_options) 
+    # Sort by option with mandatory selection
+    sort_by_options = ["publishedAt", "popularity"]
+    sort_by = st.selectbox("Sort by:", sort_by_options, index=0)  # Default to "publishedAt"
 
     if st.button("Search"):
         if not query:
             st.warning("Please enter a search query.")
         else:
             try:
-                articles = get_news_articles(query, selected_sources, sort_by if sort_by != "None" else None)
+                if selected_sources == 'All':
+                    articles = get_news_articles(query, None, sort_by)
+                else:
+                    articles = get_news_articles(query, [selected_sources], sort_by)
                 display_articles(articles)
             except requests.exceptions.RequestException as e:
                 st.error(f"Error fetching articles: {e}")
