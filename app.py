@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 # Google News API Key (Replace with your actual key)
-api_key = "YOUR_GOOGLE_NEWS_API_KEY"
+api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"
 
 # List of available news sources (excluding removed.com)
 news_sources = [
@@ -53,4 +53,5 @@ def get_news_articles(query, sources, sort_by=None):
 
 def display_articles(articles):
     """Displays articles in the specified format."""
-    for article in articles[:5]:  # Display only the first 5 articles
+    for article in articles[:5]:  # Fix indentation for the loop
+        st
