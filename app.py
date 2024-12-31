@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 # Google News API Key (Replace with your actual key)
-api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"
+api_key = "YOUR_GOOGLE_NEWS_API_KEY"
 
 # List of available news sources (excluding removed.com)
 news_sources = [
