@@ -2,84 +2,80 @@ import streamlit as st
 import requests
 from datetime import datetime
 
-def get_google_news_summaries(topic, sort_by="relevancy", sources=None):
-  """
-  Fetches news articles related to the given topic from Google News 
-  and returns a summary of each article, optionally sorted and filtered.
+# Google News API Key (Replace with your actual key)
+api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"
 
-  Args:
-    topic: The research topic for which to find articles.
-    sort_by: Sorting criteria ("relevancy" or "publishedAt"). Defaults to "relevancy".
-    sources: A list of source IDs to filter results by. Defaults to None (all sources).
+# List of available news sources
+news_sources = [
+    'abc-news', 'abc-news-au', 'aftenposten', 'al-jazeera-english', 'ansa', 'argaam', 'ars-technica', 
+    'ary-news', 'associated-press', 'australian-financial-review', 'axios', 'bbc-news', 'bbc-sport', 
+    'bild', 'blasting-news-br', 'bleacher-report', 'bloomberg', 'breitbart-news', 'business-insider', 
+    'buzzfeed', 'cbc-news', 'cbs-news', 'cnn', 'cnn-es', 'crypto-coins-news', 'der-tagesspiegel', 
+    'die-zeit', 'el-mundo', 'engadget', 'entertainment-weekly', 'espn', 'espn-cric-info', 'financial-post', 
+    'focus', 'football-italia', 'fortune', 'four-four-two', 'fox-news', 'fox-sports', 'globo', 
+    'google-news', 'google-news-ar', 'google-news-au', 'google-news-br', 'google-news-ca', 
+    'google-news-fr', 'google-news-in', 'google-news-is', 'google-news-it', 'google-news-ru', 
+    'google-news-sa', 'google-news-uk', 'goteborgs-posten', 'gruenderszene', 'hacker-news', 
+    'handelsblatt', 'ign', 'il-sole-24-ore', 'independent', 'infobae', 'info-money', 'la-gaceta', 
+    'la-nacion', 'la-repubblica', 'le-monde', 'lenta', 'lequipe', 'les-echos', 'liberation', 
+    'marca', 'mashable', 'medical-news-today', 'msnbc', 'mtv-news', 'mtv-news-uk', 'national-geographic', 
+    'national-review', 'nbc-news', 'news24', 'new-scientist', 'news-com-au', 'newsweek', 
+    'new-york-magazine', 'next-big-future', 'nfl-news', 'nhl-news', 'nrk', 'politico', 
+    'polygon', 'rbc', 'recode', 'reddit-r-all', 'reuters', 'rt', 'rte', 'rtl-nieuws', 'sabq', 
+    'spiegel-online', 'svenska-dagbladet', 't3n', 'talksport', 'techcrunch', 'techcrunch-cn', 
+    'techradar', 'the-american-conservative', 'the-globe-and-mail', 'the-hill', 'the-hindu', 
+    'the-huffington-post', 'the-irish-times', 'the-jerusalem-post', 'the-lad-bible', 'the-next-web', 
+    'the-sport-bible', 'the-times-of-india', 'the-verge', 'the-wall-street-journal', 
+    'the-washington-post', 'the-washington-times', 'time', 'usa-today', 'vice-news', 'wired', 
+    'wired-de', 'wirtschafts-woche', 'xinhua-net', 'ynet'
+]
 
-  Returns:
-    A list of dictionaries, where each dictionary contains:
-      - source: Source name
-      - title: Article title
-      - snippet: Article snippet
-      - publishedAt: Article publication date (formatted YYYY-MM-DD)
-      - url: Article URL
-  """
+def get_news_articles(query, sources, sort_by="publishedAt"):
+    """Fetches news articles from the Google News API."""
+    base_url = "https://newsapi.org/v2/everything"
+    params = {
+        "q": query,
+        "sources": ",".join(sources),
+        "sortBy": sort_by,
+        "apiKey": api_key
+    }
 
-  api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"  # Replace with your own API key
-  source_params = ','.join(sources) if sources else ''
-  url = f"https://newsapi.org/v2/everything?q={topic}&apiKey={api_key}&sortBy={sort_by}&pageSize=3&sources={source_params}"
-
-  try:
-    response = requests.get(url)
+    response = requests.get(base_url, params=params)
     response.raise_for_status()  # Raise an exception for bad status codes
     data = response.json()
 
-    summaries = []
-    for article in data['articles']:
-      source = article['source']['name']
-      title = article['title']
-      snippet = article['description']
-      published_at = datetime.fromisoformat(article['publishedAt']).strftime('%Y-%m-%d')
-      url = article['url']
-      summaries.append({
-          'source': source,
-          'title': title,
-          'snippet': snippet,
-          'publishedAt': published_at,
-          'url': url
-      })
+    return data['articles']
 
-    # Sort summaries based on the chosen criteria
-    if sort_by == "publishedAt":
-      summaries.sort(key=lambda x: datetime.fromisoformat(x['publishedAt']), reverse=True)
+def display_articles(articles):
+    """Displays articles in the specified format."""
+    for article in articles[:5]:  # Display only the first 5 articles
+        st.write(f"**{article['source']['name']}", f", \"{article['title']}\"")
+        st.write(f"**Date:** {datetime.fromisoformat(article['publishedAt']).strftime('%Y-%m-%d')}")
+        st.write(f"**Link:** {article['url']}")
+        st.write(f"**Synopsis:** {article['description']}")
+        st.write("---")
 
-    return summaries
+def main():
+    st.title("News Article Finder")
 
-  except requests.exceptions.RequestException as e:
-    print(f"Error fetching data from Google News API: {e}")
-    return []
+    # User input for search query
+    query = st.text_input("Enter your research topic:")
 
-# Get available news source options from News API
-newsapi_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"  # Replace with your own API key
-response = requests.get(f"https://newsapi.org/v2/sources?apiKey={newsapi_key}")
-response.raise_for_status()
-source_data = response.json()
-source_options = ['ALL'] + [source['id'] for source in source_data['sources']]  # Include 'ALL' option
+    # Source selection
+    selected_sources = st.multiselect("Select news sources:", news_sources)
 
-# Streamlit App
-st.title("News Summarizer")
-user_topic = st.text_input("Enter a research topic:")
+    # Sort by option
+    sort_by = st.selectbox("Sort by:", ["publishedAt", "popularity"])
 
-# Sorting options
-sort_by_options = ["Most Recent (publishedAt)", "Most Relevant (relevancy)"]
-sort_by = st.selectbox("Sort by:", sort_by_options, index=sort_by_options.index("Most Relevant (relevancy)"))
-selected_sort_by = "publishedAt" if sort_by_options.index(sort_by) == 0 else "relevancy"
+    if st.button("Search"):
+        if not query:
+            st.warning("Please enter a search query.")
+        else:
+            try:
+                articles = get_news_articles(query, selected_sources, sort_by)
+                display_articles(articles)
+            except requests.exceptions.RequestException as e:
+                st.error(f"Error fetching articles: {e}")
 
-# Filter options (multiselect)
-selected_sources = st.multiselect("Filter by Source (optional):", source_options, default=source_options[0])  # Default to 'ALL'
-
-if st.button("Summarize"):
-  if user_topic:
-    article_summaries = get_google_news_summaries(user_topic, sort_by=selected_sort_by, sources=selected_sources[1:] if 'ALL' not in selected_sources else None)
-    if article_summaries:
-      st.subheader(f"Results for: {user_topic} (Sorted by: {sort_by})")
-      for summary in article_summaries:
-        st.write(f"**{summary['source']}**, \"{summary['title']}\"")
-        st.write(f"Published: {summary['publishedAt']}")
-        st
+if __name__ == "__main__":
+    main()
