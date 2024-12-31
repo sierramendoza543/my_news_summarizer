@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+from datetime import datetime
 
 def get_google_news_summaries(topic):
   """
@@ -10,10 +11,12 @@ def get_google_news_summaries(topic):
     topic: The research topic for which to find articles.
 
   Returns:
-    A list of tuples, where each tuple contains:
-      - Source name (extracted from the URL)
-      - Article title
-      - Article snippet (from Google News)
+    A list of dictionaries, where each dictionary contains:
+      - source: Source name
+      - title: Article title
+      - snippet: Article snippet
+      - publishedAt: Article publication date
+      - url: Article URL
   """
 
   api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81" 
@@ -26,10 +29,18 @@ def get_google_news_summaries(topic):
 
     summaries = []
     for article in data['articles']:
-      source_name = article['source']['name']
+      source = article['source']['name']
       title = article['title']
       snippet = article['description']
-      summaries.append((source_name, title, snippet))
+      published_at = datetime.fromisoformat(article['publishedAt']).strftime('%Y-%m-%d') 
+      url = article['url']
+      summaries.append({
+          'source': source,
+          'title': title,
+          'snippet': snippet,
+          'publishedAt': published_at,
+          'url': url
+      })
 
     return summaries
 
@@ -46,8 +57,12 @@ if st.button("Summarize"):
     article_summaries = get_google_news_summaries(user_topic)
     if article_summaries:
       st.subheader("Results for: " + user_topic)
-      for source, title, snippet in article_summaries:
-        st.write(f"{source}, \"{title}\"\n{snippet}\n")
+      for summary in article_summaries:
+        st.write(f"**{summary['source']}**, \"{summary['title']}\"")
+        st.write(f"Published: {summary['publishedAt']}")
+        st.write(f"Snippet: {summary['snippet']}")
+        st.write(f"[Read More]({summary['url']})")
+        st.write("---") 
     else:
       st.write("No articles found for this topic.")
   else:
