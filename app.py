@@ -16,7 +16,7 @@ def get_google_news_summaries(topic):
       - Article snippet (from Google News)
   """
 
-  api_key = "YOUR_GOOGLE_NEWS_API_KEY" 
+  api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81" 
   url = f"https://newsapi.org/v2/everything?q={topic}&apiKey={api_key}&sortBy=relevancy&pageSize=3"
 
   try:
