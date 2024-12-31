@@ -69,13 +69,14 @@ def get_news_articles(query, sources, sort_by=None):
     return data['articles']
 
 def display_articles(articles):
-    """Displays articles in the specified format."""
-    for article in articles[:5]:  # Display only the first 5 articles
-        st.write(f"**{article['source']['name']}**", f", \"{article['title']}\"")
-        st.write(f"**Date:** {datetime.fromisoformat(article['publishedAt']).strftime('%Y-%m-%d')}")
-        st.write(f"**Link:** {article['url']}")
-        st.write(f"**Synopsis:** {article['description']}")
-        st.write("---")
+    """Displays articles in the specified format, filtering out articles from 'removed.com'."""
+    for article in articles:
+        if article['url'] != "https://removed.com":
+            st.write(f"**{article['source']['name']}**", f", \"{article['title']}\"")
+            st.write(f"**Date:** {datetime.fromisoformat(article['publishedAt']).strftime('%Y-%m-%d')}")
+            st.write(f"**Link:** {article['url']}")
+            st.write(f"**Synopsis:** {article['description']}")
+            st.write("---")
 
 def main():
     st.title("News Article Finder")
