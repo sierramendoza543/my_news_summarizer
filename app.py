@@ -2,25 +2,27 @@ import streamlit as st
 import requests
 from datetime import datetime
 
-def get_google_news_summaries(topic):
+def get_google_news_summaries(topic, sort_by="publishedAt"):
   """
   Fetches news articles related to the given topic from Google News 
   and returns a summary of each article.
 
   Args:
     topic: The research topic for which to find articles.
+    sort_by: The sorting criteria ("publishedAt" for most recent, 
+             "popularity" for most popular).
 
   Returns:
     A list of dictionaries, where each dictionary contains:
       - source: Source name
       - title: Article title
       - snippet: Article snippet
-      - publishedAt: Article publication date
       - url: Article URL
+      - publishedAt: Article publication date and time
   """
 
   api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81" 
-  url = f"https://newsapi.org/v2/everything?q={topic}&apiKey={api_key}&sortBy=relevancy&pageSize=3"
+  url = f"https://newsapi.org/v2/everything?q={topic}&apiKey={api_key}&sortBy={sort_by}&pageSize=3"
 
   try:
     response = requests.get(url)
@@ -29,17 +31,12 @@ def get_google_news_summaries(topic):
 
     summaries = []
     for article in data['articles']:
-      source = article['source']['name']
-      title = article['title']
-      snippet = article['description']
-      published_at = datetime.fromisoformat(article['publishedAt']).strftime('%Y-%m-%d') 
-      url = article['url']
       summaries.append({
-          'source': source,
-          'title': title,
-          'snippet': snippet,
-          'publishedAt': published_at,
-          'url': url
+          "source": article['source']['name'],
+          "title": article['title'],
+          "snippet": article['description'],
+          "url": article['url'],
+          "publishedAt": datetime.fromisoformat(article['publishedAt']).strftime("%Y-%m-%d %H:%M:%S") 
       })
 
     return summaries
@@ -52,16 +49,18 @@ def get_google_news_summaries(topic):
 st.title("News Summarizer")
 user_topic = st.text_input("Enter a research topic:")
 
+sort_by = st.radio("Sort by:", ("Published Date", "Popularity"))
+sort_by = "publishedAt" if sort_by == "Published Date" else "popularity"
+
 if st.button("Summarize"):
   if user_topic:
-    article_summaries = get_google_news_summaries(user_topic)
+    article_summaries = get_google_news_summaries(user_topic, sort_by)
     if article_summaries:
       st.subheader("Results for: " + user_topic)
-      for summary in article_summaries:
-        st.write(f"**{summary['source']}**, \"{summary['title']}\"")
-        st.write(f"Published: {summary['publishedAt']}")
-        st.write(f"Snippet: {summary['snippet']}")
-        st.write(f"[Read More]({summary['url']})")
+      for article in article_summaries:
+        st.write(f"{article['source']}, \"{article['title']}\"\n{article['snippet']}\n")
+        st.write(f"Published: {article['publishedAt']}")
+        st.write(f"URL: {article['url']}")
         st.write("---") 
     else:
       st.write("No articles found for this topic.")
