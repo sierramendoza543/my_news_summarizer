@@ -1,4 +1,5 @@
 import streamlit as st
+import newsapi
 from newsapi import NewsApiClient
 
 def get_google_news_summaries(topic, sources, sort_by='relevancy'):
