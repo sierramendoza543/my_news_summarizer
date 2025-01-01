@@ -76,14 +76,16 @@ def get_news_articles(query, sources, sort_by=None):
 
 def generate_quiz_with_openai(article):
     """Generates a quiz question and options using OpenAI."""
-    prompt = f"Read the following article snippet and generate a multiple-choice quiz question: \n\n" \
-             f"**Title:** {article['title']}\n" \
-             f"**Source:** {article['source']['name']}\n" \
-             f"**Content:** {article['content']}\n" \
-             f"\n"  # This line should NOT be indented 
-             f"The quiz question should be based on the article's content, have 4 options, and one of which is the correct answer. " \
-             f"Present the output as a JSON object with the following keys: " \
-             f"'question', 'options', and 'correct_answer'."
+    prompt = f"""Read the following article snippet and generate a multiple-choice quiz question: 
+
+**Title:** {article['title']}
+**Source:** {article['source']['name']}
+**Content:** {article['content']}
+
+The quiz question should be based on the article's content, have 4 options, and one of which is the correct answer. 
+Present the output as a JSON object with the following keys: 
+'question', 'options', and 'correct_answer'.
+"""
 
     try:
         response = openai.Completion.create(
