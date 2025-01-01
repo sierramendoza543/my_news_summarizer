@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from datetime import datetime
+import random
 
 # Google News API Key (Replace with your actual key)
 api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"
@@ -68,18 +69,48 @@ def get_news_articles(query, sources, sort_by=None):
 
     return data['articles']
 
-def display_articles(articles):
-    """Displays articles in the specified format, filtering out articles from 'removed.com'."""
-    for article in articles:
-        if article['url'] != "https://removed.com":
-            st.write(f"**{article['source']['name']}**", f", \"{article['title']}\"")
-            st.write(f"**Date:** {datetime.fromisoformat(article['publishedAt']).strftime('%Y-%m-%d')}")
-            st.write(f"**Link:** {article['url']}")
-            st.write(f"**Synopsis:** {article['description']}")
-            st.write("---")
+def create_quiz(synopsis):
+    """Creates a simple multiple-choice quiz based on the article synopsis."""
+    # Extract keywords from the synopsis
+    keywords = synopsis.split() 
+
+    # Create a list of possible answers (including the correct answer and distractors)
+    possible_answers = [
+        random.choice(keywords), 
+        random.choice(keywords), 
+        random.choice(keywords), 
+        random.choice(keywords) 
+    ]
+    correct_answer = random.choice(keywords) 
+    possible_answers[random.randint(0, 3)] = correct_answer
+
+    # Shuffle the answer options 
+    random.shuffle(possible_answers)
+
+    return possible_answers, correct_answer
+
+def display_article_and_quiz(article):
+    """Displays the article and presents the quiz."""
+    st.write(f"**{article['source']['name']}**", f", \"{article['title']}\"")
+    st.write(f"**Date:** {datetime.fromisoformat(article['publishedAt']).strftime('%Y-%m-%d')}")
+    st.write(f"**Link:** {article['url']}")
+    st.write(f"**Synopsis:** {article['description']}")
+    st.write("---")
+
+    synopsis = article['description']
+    possible_answers, correct_answer = create_quiz(synopsis)
+
+    st.write("**Quiz:**")
+    user_answer = st.radio("Which keyword is related to the article?", possible_answers)
+
+    if st.button("Submit"):
+        if user_answer == correct_answer:
+            st.success("Correct!")
+        else:
+            st.error("Incorrect.")
 
 def main():
-    st.title("News Article Finder")
+    st.title("News Article Finder & Quiz")
 
     # User input for search query
     query = st.text_input("Enter your research topic:")
@@ -101,7 +132,14 @@ def main():
                     articles = get_news_articles(query, None, sort_by)
                 else:
                     articles = get_news_articles(query, [selected_sources], sort_by)
-                display_articles(articles)
+
+                # Select a random article
+                if articles:
+                    random_article = random.choice(articles)
+                    display_article_and_quiz(random_article)
+                else:
+                    st.warning("No articles found.")
+
             except requests.exceptions.RequestException as e:
                 st.error(f"Error fetching articles: {e}")
 
