@@ -2,10 +2,12 @@ import streamlit as st
 import requests
 from datetime import datetime
 import openai
-import random
 
 # Replace with your actual OpenAI API key
 openai.api_key = "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"
+
+# Replace with your actual Google News API key
+api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"
 
 # List of available U.S. news sources
 us_sources = [
@@ -50,7 +52,6 @@ us_sources = [
     'wired'
 ]
 
-api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"
 def get_news_articles(query, sources, sort_by=None):
     """Fetches news articles from the Google News API."""
     base_url = "https://newsapi.org/v2/everything"
@@ -72,10 +73,14 @@ def get_news_articles(query, sources, sort_by=None):
     # Filter articles that don't contain "random.com" in the link
     return [article for article in data['articles'] if "random.com" not in article['url']]
 
-def generate_quiz_with_openai(synopsis):
+def generate_quiz_with_openai(article):
     """Generates a quiz question and options using OpenAI."""
-    prompt = f"Create a multiple-choice quiz question based on the following synopsis: '{synopsis}'. " \
-             f"Include 4 answer options, one of which is the correct answer. " \
+    prompt = f"Read the following article snippet and generate a multiple-choice quiz question: \n\n" \
+             f"**Title:** {article['title']}\n" \
+             f"**Source:** {article['source']['name']}\n" \
+             f"**Synopsis:** {article['description']}\n" \
+             f"\n" \
+             f"The quiz question should have 4 options, one of which is the correct answer. " \
              f"Present the output as a JSON object with the following keys: " \
              f"'question', 'options', and 'correct_answer'."
 
@@ -102,8 +107,7 @@ def display_article_and_quiz(article):
     st.write(f"**Synopsis:** {article['description']}")
     st.write("---")
 
-    synopsis = article['description']
-    question, options, correct_answer = generate_quiz_with_openai(synopsis)
+    question, options, correct_answer = generate_quiz_with_openai(article)
 
     if question and options and correct_answer:
         st.write("**Quiz:**")
