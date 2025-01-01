@@ -104,4 +104,4 @@ def main():
 
     query = st.text_input("Enter your research topic:")
     source_options = ['All'] + us_sources
-    selected_sources = st.
+    selected_sources = st.selectbox("Select news sources:", source_options)
