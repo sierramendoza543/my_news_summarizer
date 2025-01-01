@@ -1,14 +1,14 @@
 import streamlit as st
 import requests
 from datetime import datetime
-import openai
 import random
+import openai
 
 # Replace with your actual OpenAI API key
-openai.api_key = "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"
+openai.api_key = "YOUR_OPENAI_API_KEY"
 
 # Replace with your actual Google News API key
-api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"
+api_key = "YOUR_GOOGLE_NEWS_API_KEY"
 
 # List of available U.S. news sources
 us_sources = [
@@ -79,9 +79,9 @@ def generate_quiz_with_openai(article):
     prompt = f"Read the following article snippet and generate a multiple-choice quiz question: \n\n" \
              f"**Title:** {article['title']}\n" \
              f"**Source:** {article['source']['name']}\n" \
-             f"**Synopsis:** {article['description']}\n" \
+             f"**Content:** {article['content']}\n"  # Use article['content'] here \
              f"\n" \
-             f"The quiz question should have 4 options, one of which is the correct answer. " \
+             f"The quiz question should be based on the article's content, have 4 options, and one of which is the correct answer. " \
              f"Present the output as a JSON object with the following keys: " \
              f"'question', 'options', and 'correct_answer'."
 
