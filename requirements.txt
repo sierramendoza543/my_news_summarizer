@@ -2,4 +2,4 @@ streamlit
 requests
 newsapi
 openai
-transformers
+transformers==4.31.0
