@@ -1,10 +1,10 @@
 import streamlit as st
 import requests
 from datetime import datetime
-import random
+import openai
 
-# Replace with your actual Google News API Key
-api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"
+# Replace with your actual OpenAI API key
+openai.api_key = "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"
 
 # List of available U.S. news sources
 us_sources = [
@@ -70,14 +70,27 @@ def get_news_articles(query, sources, sort_by=None):
     # Filter articles that don't contain "random.com" in the link
     return [article for article in data['articles'] if "random.com" not in article['url']]
 
-def create_quiz(synopsis):
-    """Creates a simple multiple-choice quiz based on the article synopsis."""
-    keywords = synopsis.split() 
-    possible_answers = [random.choice(keywords) for _ in range(4)] 
-    correct_answer = random.choice(keywords) 
-    possible_answers[random.randint(0, 3)] = correct_answer
-    random.shuffle(possible_answers)
-    return possible_answers, correct_answer
+def generate_quiz_with_openai(synopsis):
+    """Generates a quiz question and options using OpenAI."""
+    prompt = f"Create a multiple-choice quiz question based on the following synopsis: '{synopsis}'. " \
+             f"Include 4 answer options, one of which is the correct answer. " \
+             f"Present the output as a JSON object with the following keys: " \
+             f"'question', 'options', and 'correct_answer'."
+
+    try:
+        response = openai.Completion.create(
+            engine="text-davinci-003", 
+            prompt=prompt, 
+            max_tokens=1024, 
+            n=1, 
+            stop=None, 
+            temperature=0.7
+        )
+        quiz_data = eval(response.choices[0].text)  # Evaluate the JSON response
+        return quiz_data['question'], quiz_data['options'], quiz_data['correct_answer']
+    except Exception as e:
+        print(f"Error generating quiz: {e}")
+        return None, None, None
 
 def display_article_and_quiz(article):
     """Displays the article and presents the quiz."""
@@ -88,16 +101,19 @@ def display_article_and_quiz(article):
     st.write("---")
 
     synopsis = article['description']
-    possible_answers, correct_answer = create_quiz(synopsis)
+    question, options, correct_answer = generate_quiz_with_openai(synopsis)
 
-    st.write("**Quiz:**")
-    user_answer = st.radio("Which keyword is related to the article?", possible_answers)
+    if question and options and correct_answer:
+        st.write("**Quiz:**")
+        user_answer = st.radio(question, options)
 
-    if st.button("Submit"):
-        if user_answer == correct_answer:
-            st.success("Correct!")
-        else:
-            st.error("Incorrect.")
+        if st.button("Submit"):
+            if user_answer == correct_answer:
+                st.success("Correct!")
+            else:
+                st.error("Incorrect.")
+    else:
+        st.warning("Failed to generate quiz questions.")
 
 def main():
     st.title("News Article Finder & Quiz")
@@ -105,3 +121,27 @@ def main():
     query = st.text_input("Enter your research topic:")
     source_options = ['All'] + us_sources
     selected_sources = st.selectbox("Select news sources:", source_options)
+    sort_by_options = ["publishedAt", "popularity"]
+    sort_by = st.selectbox("Sort by:", sort_by_options, index=0) 
+
+    if st.button("Search"):
+        if not query:
+            st.warning("Please enter a search query.")
+        else:
+            try:
+                if selected_sources == 'All':
+                    articles = get_news_articles(query, None, sort_by)
+                else:
+                    articles = get_news_articles(query, [selected_sources], sort_by)
+
+                if articles:
+                    random_article = random.choice(articles)
+                    display_article_and_quiz(random_article)
+                else:
+                    st.warning("No articles found.")
+
+            except requests.exceptions.RequestException as e:
+                st.error(f"Error fetching articles: {e}")
+
+if __name__ == "__main__":
+    main()
