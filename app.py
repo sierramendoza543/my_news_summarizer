@@ -79,8 +79,8 @@ def generate_quiz_with_openai(article):
     prompt = f"Read the following article snippet and generate a multiple-choice quiz question: \n\n" \
              f"**Title:** {article['title']}\n" \
              f"**Source:** {article['source']['name']}\n" \
-             f"**Content:** {article['content']}\n"  # Use article['content'] here
-             f"\n"  # This line should not be indented
+             f"**Content:** {article['content']}\n" \
+             f"\n"  # This line should NOT be indented 
              f"The quiz question should be based on the article's content, have 4 options, and one of which is the correct answer. " \
              f"Present the output as a JSON object with the following keys: " \
              f"'question', 'options', and 'correct_answer'."
