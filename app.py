@@ -49,6 +49,7 @@ us_sources = [
     'wired'
 ]
 
+api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"
 def get_news_articles(query, sources, sort_by=None):
     """Fetches news articles from the Google News API."""
     base_url = "https://newsapi.org/v2/everything"
