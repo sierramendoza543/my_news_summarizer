@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from datetime import datetime
 import google.generativeai as geni
+import random
 
 # Replace with your actual Google News API Key
 api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"
