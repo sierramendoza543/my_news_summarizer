@@ -5,10 +5,10 @@ import random
 import openai
 
 # Replace with your actual OpenAI API key
-openai.api_key = "YOUR_OPENAI_API_KEY"
+openai.api_key = "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"
 
 # Replace with your actual Google News API key
-api_key = "YOUR_GOOGLE_NEWS_API_KEY"
+api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"
 
 # List of available U.S. news sources
 us_sources = [
