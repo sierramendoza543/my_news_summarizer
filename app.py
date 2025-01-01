@@ -1,156 +1,142 @@
 import streamlit as st
-import requests
-from datetime import datetime
-import random
-import openai
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# Replace with your actual OpenAI API key
-openai.api_key = "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"
+# Load the pre-trained language model (replace with your preferred model)
+model_name = "gpt2"  # Example: gpt2, gpt-j-6B 
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name)
 
-# Replace with your actual Google News API key
-api_key = "91e12b0daa1e4de9b5a5a15b4bd40a81"
+def generate_quiz_question(text):
+    """
+    Generates a quiz question and answer options using a language model.
 
-# List of available U.S. news sources
-us_sources = [
-    'abc-news', 
-    'axios', 
-    'bbc-news', 
-    'bloomberg', 
-    'breitbart-news', 
-    'business-insider', 
-    'cbs-news', 
-    'cnn', 
-    'cnn-es', 
-    'fox-news', 
-    'fortune', 
-    'google-news', 
-    'google-news-ar', 
-    'google-news-au', 
-    'google-news-br', 
-    'google-news-ca', 
-    'google-news-fr', 
-    'google-news-in', 
-    'google-news-is', 
-    'google-news-it', 
-    'google-news-ru', 
-    'google-news-sa', 
-    'google-news-uk', 
-    'msnbc', 
-    'nbc-news', 
-    'newsweek', 
-    'politico', 
-    'reuters', 
-    'the-american-conservative', 
-    'the-globe-and-mail', 
-    'the-hill', 
-    'the-huffington-post', 
-    'the-wall-street-journal', 
-    'the-washington-post', 
-    'the-washington-times', 
-    'time', 
-    'usa-today', 
-    'vice-news', 
-    'wired'
-]
+    Args:
+        text: The text to generate the quiz from.
 
-def get_news_articles(query, sources, sort_by=None):
-    """Fetches news articles from the Google News API."""
-    base_url = "https://newsapi.org/v2/everything"
-    params = {
-        "q": query,
-        "apiKey": api_key
-    }
+    Returns:
+        A dictionary containing the question, options, and correct answer.
+    """
+    prompt = f"""
+    **Instructions:** 
 
-    if sources and sources != ['All']:
-        params["sources"] = ",".join(sources)
+    1. **Create a multiple-choice quiz question** based on the following text: 
+       "{text}"
 
-    if sort_by:
-        params["sortBy"] = sort_by
+    2. **Ensure:**
+       - The question is relevant to the provided text.
+       - There are **four** answer options (including one correct answer).
+       - The answer options are plausible and not easily distinguishable as incorrect.
 
-    response = requests.get(base_url, params=params)
-    response.raise_for_status()  # Raise an exception for bad status codes
-    data = response.json()
+    3. **Output the question and answer options in the following format:**
+       **Question:** <question_text>
+       **Options:**
+           - <option_1>
+           - <option_2>
+           - <option_3>
+           - <option_4>
+       **Correct Answer:** <correct_answer>
 
-    # Filter articles that don't contain "random.com" in the link
-    return [article for article in data['articles'] if "random.com" not in article['url']]
+    **Example:**
 
-def generate_quiz_with_openai(article):
-    """Generates a quiz question and options using OpenAI."""
-    prompt = f"""Read the following article snippet and generate a multiple-choice quiz question: 
+    **Instructions:** 
 
-**Title:** {article['title']}
-**Source:** {article['source']['name']}
-**Content:** {article['content']}
+    1. **Create a multiple-choice quiz question** based on the following text: 
+       "The quick brown fox jumps over the lazy dog."
 
-The quiz question should be based on the article's content, have 4 options, and one of which is the correct answer. 
-Present the output as a JSON object with the following keys: 
-'question', 'options', and 'correct_answer'.
-"""
+    2. **Ensure:** 
+       - ... (as above)
 
+    3. **Output the question and answer options in the following format:**
+       **Question:** What is the subject of the sentence?
+       **Options:**
+           - dog
+           - fox
+           - brown
+           - jumps
+       **Correct Answer:** fox
+
+    **Now, generate the quiz question based on the provided text:** 
+    """
+
+    input_ids = tokenizer.encode(prompt, return_tensors="pt")
+    outputs = model.generate(input_ids, max_length=256, do_sample=True, top_p=0.9, top_k=50)
+    generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+    # Extract question, options, and answer from the generated text
+    # (Implement robust parsing logic based on the expected output format)
     try:
-        response = openai.Completion.create(
-            engine="text-davinci-003", 
-            prompt=prompt, 
-            max_tokens=1024, 
-            n=1, 
-            stop=None, 
-            temperature=0.7
-        )
-        quiz_data = eval(response.choices[0].text)  # Evaluate the JSON response
-        return quiz_data['question'], quiz_data['options'], quiz_data['correct_answer']
-    except Exception as e:
-        print(f"Error generating quiz: {e}")
-        return None, None, None
+        question = generated_text.split("**Question:** ")[1].split("**Options:**")[0].strip()
+        options_str = generated_text.split("**Options:** ")[1].split("**Correct Answer:**")[0].strip()
+        options = [option.strip() for option in options_str.split("-")]
+        answer = generated_text.split("**Correct Answer:** ")[1].strip()
+    except IndexError:
+        print("Error parsing generated text. Please refine the prompt or try again.")
+        return None
 
-def display_article_and_quiz(article):
-    """Displays the article and presents the quiz."""
-    st.write(f"**{article['source']['name']}", f", \"{article['title']}\"")
-    st.write(f"**Date:** {datetime.fromisoformat(article['publishedAt']).strftime('%Y-%m-%d')}")
-    st.write(f"**Link:** {article['url']}")
-    st.write(f"**Synopsis:** {article['description']}")
-    st.write("---")
+    return {"question": question, "options": options, "answer": answer}
 
-    question, options, correct_answer = generate_quiz_with_openai(article)
+def display_quiz(questions):
+    """
+    Displays the quiz on the Streamlit app.
 
-    if question and options and correct_answer:
-        st.write("**Quiz:**")
-        user_answer = st.radio(question, options)
+    Args:
+        questions: A list of dictionaries representing the quiz questions.
+    """
+    st.title("AI-Generated Quiz")
 
-        if st.button("Submit"):
-            if user_answer == correct_answer:
-                st.success("Correct!")
-            else:
-                st.error("Incorrect.")
-    else:
-        st.warning("Failed to generate quiz questions.")
+    for i, question in enumerate(questions):
+        st.write(f"**Question {i+1}:** {question['question']}")
+        selected_option = st.radio("Select your answer:", question["options"])
+        st.write("---")
 
-def main():
-    st.title("News Article Finder & Quiz")
-
-    query = st.text_input("Enter your research topic:")
-    source_options = ['All'] + us_sources
-    selected_sources = st.selectbox("Select news sources:", source_options)
-    sort_by_options = ["publishedAt", "popularity"]
-    sort_by = st.selectbox("Sort by:", sort_by_options, index=0) 
-
-    if st.button("Search"):
-        if not query:
-            st.warning("Please enter a search query.")
+        if selected_option == question["answer"]:
+            st.success("Correct!")
         else:
-            try:
-                if selected_sources == 'All':
-                    articles = get_news_articles(query, None, sort_by)
-                else:
-                    articles = get_news_articles(query, [selected_sources], sort_by)
-
-                if articles:
-                    random_article = random.choice(articles)
-                    display_article_and_quiz(random_article)
-                else:
-                    st.warning("No articles found.")
-
-            except requests.exceptions.RequestException as e:
-                st.error(f"Error fetching articles: {e}")
+            st.error("Incorrect")
 
 if __name__ == "__main__":
-    main()
+    text = """
+    ‘Make 2025 New Beginning, Not as World Divided but as Nations United,’ 
+    Secretary-General Urges in New Year Message
+    Following is the text of UN Secretary-General António Guterres’ New Year video 
+    message for 2025:
+    Throughout 2024, hope has been hard to find.  Wars are causing enormous pain, 
+    suffering and displacement.  Inequalities and divisions are rife — fuelling 
+    tensions and mistrust. 
+    And today I can officially report that we have just endured a decade of deadly 
+    heat.  The top ten 10 hottest years on record have happened in the last 10 years, 
+    including 2024.  This is climate breakdown — in real time.  We must exit this road 
+    to ruin — and we have no time to lose. 
+    In 2025, countries must put the world on a safer path by dramatically slashing 
+    emissions and supporting the transition to a renewable future.  It is essential — 
+    and it is possible. 
+    Even in the darkest days, I’ve seen hope power change.  I see hope in activists — 
+    young and old — raising their voices for progress.  I see hope in the humanitarian 
+    heroes overcoming enormous obstacles to support the most vulnerable people.  I see 
+    hope in developing countries fighting for financial and climate justice.  I see 
+    hope in the scientists and innovators breaking new ground for humanity.  And I 
+    saw hope in September, when world leaders came together to adopt the Pact for 
+    the Future. 
+    The Pact is a new push to build peace through disarmament and prevention.  To 
+    reform the global financial system so it supports and represents all countries.  To 
+    push for more opportunities for women and young people.  To build guardrails so 
+    technologies put people over profits and rights over runaway algorithms.  And 
+    always, to stick to the values and principles enshrined by human rights, 
+    international law and the United Nations Charter. 
+    There are no guarantees for what’s ahead in 2025.  But I pledge to stand with 
+    all those who are working to forge a more peaceful, equal, stable and healthy 
+    future for all people.  Together, we can make 2025 a new beginning.  Not as a 
+    world divided.  But as nations united.
+    """
+
+    num_questions = 4  # Adjust as needed
+    questions = []
+    for _ in range(num_questions):
+        question_data = generate_quiz_question(text)
+        if question_data:
+            questions.append(question_data)
+
+    if questions:
+        display_quiz(questions)
+    else:
+        st.error("Failed to generate quiz questions. Please try again later.")
