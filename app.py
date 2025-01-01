@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from datetime import datetime
 import openai
+import random
 
 # Replace with your actual OpenAI API key
 openai.api_key = "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"
